@@ -1,0 +1,359 @@
+/* ============================================================
+   1) DESIGN TOKENS — palette, typographie, rayons, ombres.
+   Tout le design de l'app part de ces variables : les modifier
+   ici suffit à changer l'apparence globale sans toucher au reste.
+   ============================================================ */
+:root {
+  --bg: #f3f2ed;
+  --surface: #ffffff;
+  --surface-2: #eae7dd;
+  --text: #21231f;
+  --text-muted: #6c6f64;
+  --border: #ded9cb;
+  --accent: #2f6f5e;
+  --accent-contrast: #ffffff;
+  --accent-soft: #dce9e3;
+  --danger: #b4483a;
+  --danger-soft: #f3ded9;
+  --shadow: 0 1px 2px rgba(33, 35, 31, 0.04), 0 12px 28px -12px rgba(33, 35, 31, 0.18);
+  --radius: 14px;
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-body: "Manrope", -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+
+/* Thème sombre : suit les réglages du système... */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12181a;
+    --surface: #1b2224;
+    --surface-2: #232b2d;
+    --text: #edeeea;
+    --text-muted: #9aa39d;
+    --border: #33393b;
+    --accent: #5fb69d;
+    --accent-contrast: #0b1210;
+    --accent-soft: #1d332d;
+    --danger: #e08a76;
+    --danger-soft: #3a241f;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 28px -12px rgba(0, 0, 0, 0.5);
+  }
+}
+/* ...ou un choix explicite de l'utilisateur (surcharge le système). */
+:root[data-theme="dark"] {
+  --bg: #12181a;
+  --surface: #1b2224;
+  --surface-2: #232b2d;
+  --text: #edeeea;
+  --text-muted: #9aa39d;
+  --border: #33393b;
+  --accent: #5fb69d;
+  --accent-contrast: #0b1210;
+  --accent-soft: #1d332d;
+  --danger: #e08a76;
+  --danger-soft: #3a241f;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 28px -12px rgba(0, 0, 0, 0.5);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  display: flex;
+  justify-content: center;
+  padding-inline: 16px;
+  padding-block: 40px;
+}
+
+.app {
+  width: 100%;
+  max-width: 480px;
+}
+
+/* ---------- En-tête ---------- */
+.app-header { margin-bottom: 20px; }
+
+.title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 2rem;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.counter {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  margin: 6px 0 0;
+}
+
+/* ---------- Formulaire d'ajout ---------- */
+.add-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+#task-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font: inherit;
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+
+#task-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+#task-input.shake {
+  animation: shake 0.35s;
+  border-color: var(--danger);
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.btn-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border: none;
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-add:hover { filter: brightness(1.05); }
+.btn-add:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn-add svg { width: 16px; height: 16px; }
+
+/* ---------- Filtres ---------- */
+.filters {
+  display: flex;
+  gap: 4px;
+  background: var(--surface-2);
+  border-radius: 999px;
+  padding: 4px;
+  margin-bottom: 16px;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.filter-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.filter-btn[aria-selected="true"] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+
+.filter-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---------- Liste de tâches ---------- */
+.task-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.task-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 12px 12px 14px;
+  box-shadow: var(--shadow);
+  animation: appear 0.18s ease-out;
+}
+
+@keyframes appear {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.task-item.leaving {
+  animation: leave 0.16s ease-in forwards;
+}
+
+@keyframes leave {
+  to { opacity: 0; transform: scale(0.97); }
+}
+
+/* Case à cocher personnalisée : l'input natif reste accessible
+   (clavier, lecteur d'écran) mais devient invisible ; c'est le
+   <span> voisin qui dessine le rond + la coche. */
+.task-checkbox {
+  position: relative;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+}
+
+.task-checkbox input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.task-checkbox .dot {
+  position: absolute;
+  inset: 0;
+  border: 1.5px solid var(--border);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.task-checkbox .dot svg {
+  width: 13px;
+  height: 13px;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.15s, transform 0.15s;
+  color: var(--accent-contrast);
+}
+
+.task-checkbox input:checked + .dot {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.task-checkbox input:checked + .dot svg {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.task-checkbox input:focus-visible + .dot {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.task-text {
+  flex: 1;
+  min-width: 0;
+  word-wrap: break-word;
+  font-size: 0.98rem;
+  line-height: 1.4;
+  padding-top: 1px;
+}
+
+.task-item.done .task-text {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.btn-delete {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 4px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.btn-delete:hover { background: var(--danger-soft); color: var(--danger); }
+.btn-delete:focus-visible { outline: 2px solid var(--danger); outline-offset: 1px; }
+.btn-delete svg { width: 16px; height: 16px; }
+
+/* ---------- État vide ---------- */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  color: var(--text-muted);
+  padding: 36px 16px;
+  font-size: 0.92rem;
+}
+
+.empty-state svg { width: 40px; height: 40px; color: var(--border); }
+
+/* ---------- Pied de page ---------- */
+.app-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  padding-top: 4px;
+}
+
+.btn-link {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.btn-link:hover { color: var(--danger); }
+.btn-link:disabled { opacity: 0.4; cursor: default; }
+.btn-link:disabled:hover { color: var(--text-muted); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
