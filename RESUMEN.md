@@ -25,3 +25,20 @@
 
 ## 📊 Progress
 Training: In Progress...
+
+## ✅ Completed Projects
+- ✅ JavaScript Calculator (with HTML, CSS, JavaScript) — minor bugs to fix
+- ✅ TODO App with localStorage — minor bugs to fix
+
+## 📈 Progress
+- Core Concepts: 100% ✅
+- Prompting Techniques (RACS, Few-shot, Chain of Thoughts): 75% (in progress)
+- Projects Completed: 2 (debugging in progress)
+- Training Slides: ~50% (in progress)
+
+## 🎓 Key Learnings
+- Understand AI fundamentals (ML, DL, NLP)
+- Use RACS framework for prompting
+- Build projects with Spec Driven Development
+- Organize code on GitHub professionally
+- Learning to debug AI-generated code
