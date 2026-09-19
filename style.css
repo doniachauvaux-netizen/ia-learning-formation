@@ -1,0 +1,108 @@
+/* ── Reset de base ─────────────────────────────────────────────────────────── */
+* {
+  box-sizing: border-box; /* Le padding est inclus dans la largeur */
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, sans-serif;
+  background: #1a1a2e;         /* Fond sombre de la page */
+  display: flex;
+  justify-content: center;     /* Centre horizontalement */
+  align-items: center;         /* Centre verticalement */
+  min-height: 100vh;           /* Occupe toute la hauteur de l'écran */
+}
+
+/* ── Boîtier de la calculatrice ────────────────────────────────────────────── */
+.calc {
+  background: #16213e;
+  border-radius: 20px;
+  padding: 1.25rem;
+  width: 280px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+/* ── Écran d'affichage ─────────────────────────────────────────────────────── */
+.display {
+  background: #0f3460;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  min-height: 90px;
+  display: flex;
+  flex-direction: column;      /* Empile les deux lignes verticalement */
+  justify-content: flex-end;   /* Pousse le contenu vers le bas */
+  text-align: right;
+}
+
+/* Petite ligne d'expression en haut (ex. "12 ×") */
+.display-expr {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.45);
+  min-height: 18px;
+  word-break: break-all;
+}
+
+/* Grand nombre principal */
+.display-main {
+  font-size: 36px;
+  font-weight: 300;
+  color: #e2e8f0;
+  word-break: break-all;       /* Coupe si le nombre est très long */
+  line-height: 1.2;
+}
+
+/* ── Grille des boutons ────────────────────────────────────────────────────── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* 4 colonnes égales */
+  gap: 10px;
+}
+
+/* ── Style commun à tous les boutons ──────────────────────────────────────── */
+.btn {
+  background: #1a1a3e;
+  color: #e2e8f0;
+  border: none;
+  border-radius: 12px;
+  font-size: 18px;
+  height: 60px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.btn:hover  { background: #252550; }
+.btn:active { transform: scale(0.94); } /* Légère compression au clic */
+
+/* ── Boutons spéciaux ──────────────────────────────────────────────────────── */
+
+/* AC, +/−, % — couleur différente pour signaler "modifier / effacer" */
+.btn-clear {
+  background: #2d2d6b;
+  color: #a78bfa;
+}
+.btn-clear:hover { background: #3a3a80; }
+
+/* Opérateurs ÷ × − + — couleur bleue pour les distinguer des chiffres */
+.btn-op {
+  background: #1e3a5f;
+  color: #60a5fa;
+  font-size: 22px;
+}
+.btn-op:hover { background: #1e4a7a; }
+
+/* Bouton = — couleur pleine, c'est l'action principale */
+.btn-eq {
+  background: #3b82f6;
+  color: #ffffff;
+  font-size: 22px;
+}
+.btn-eq:hover { background: #2563eb; }
+
+/* Bouton 0 — occupe 2 colonnes */
+.btn-wide {
+  grid-column: span 2;
+  text-align: left;            /* Le '0' est à gauche comme sur une vraie calculatrice */
+  padding-left: 22px;
+}
