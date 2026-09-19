@@ -18,14 +18,6 @@
 - ✅ LLM Tricks & Best Practices
 - ✅ Applications to SDLC
 
-## 🎯 Completed Projects
-- [ ] JavaScript Calculator
-- [ ] Todo App
-- [ ] My First Real Project
-
-## 📊 Progress
-Training: In Progress...
-
 ## ✅ Completed Projects
 - ✅ JavaScript Calculator (with HTML, CSS, JavaScript) — minor bugs to fix
 - ✅ TODO App with localStorage — minor bugs to fix
