@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculatrice</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Conteneur principal de la calculatrice -->
+  <div class="calc-wrap">
+    <div class="calc">
+
+      <!-- ÉCRAN D'AFFICHAGE -->
+      <div class="display">
+        <!-- Ligne du haut : montre l'expression en cours (ex. "12 ×") -->
+        <div class="display-expr" id="expr"></div>
+        <!-- Ligne principale : le nombre affiché -->
+        <div class="display-main" id="main">0</div>
+      </div>
+
+      <!-- GRILLE DES BOUTONS (4 colonnes) -->
+      <div class="grid">
+
+        <!-- Ligne 1 : contrôles et division -->
+        <button class="btn btn-clear" data-action="clear"   aria-label="Réinitialiser">AC</button>
+        <button class="btn btn-clear" data-action="sign"    aria-label="Changer le signe">+/−</button>
+        <button class="btn btn-clear" data-action="percent" aria-label="Pourcentage">%</button>
+        <button class="btn btn-op"   data-action="op" data-val="÷">÷</button>
+
+        <!-- Ligne 2 : 7 8 9 × -->
+        <button class="btn" data-action="digit" data-val="7">7</button>
+        <button class="btn" data-action="digit" data-val="8">8</button>
+        <button class="btn" data-action="digit" data-val="9">9</button>
+        <button class="btn btn-op" data-action="op" data-val="×">×</button>
+
+        <!-- Ligne 3 : 4 5 6 − -->
+        <button class="btn" data-action="digit" data-val="4">4</button>
+        <button class="btn" data-action="digit" data-val="5">5</button>
+        <button class="btn" data-action="digit" data-val="6">6</button>
+        <button class="btn btn-op" data-action="op" data-val="−">−</button>
+
+        <!-- Ligne 4 : 1 2 3 + -->
+        <button class="btn" data-action="digit" data-val="1">1</button>
+        <button class="btn" data-action="digit" data-val="2">2</button>
+        <button class="btn" data-action="digit" data-val="3">3</button>
+        <button class="btn btn-op" data-action="op" data-val="+">+</button>
+
+        <!-- Ligne 5 : 0 large, virgule, = -->
+        <button class="btn btn-wide" data-action="digit" data-val="0">0</button>
+        <button class="btn" data-action="decimal">,</button>
+        <button class="btn btn-eq"   data-action="equals">=</button>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- On charge le JavaScript à la fin pour que le HTML soit déjà prêt -->
+  <script src="script.js"></script>
+</body>
+</html>
