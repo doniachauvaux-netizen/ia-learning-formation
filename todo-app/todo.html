@@ -1,0 +1,607 @@
+<title>Pense-bête</title>
+<style>
+  /* ============================================================
+     1) DESIGN TOKENS — palette, typographie, rayons, ombres.
+     Tout le design de l'app part de ces variables : les modifier
+     ici suffit à changer l'apparence globale sans toucher au reste.
+     ============================================================ */
+  :root {
+    --bg: #f3f2ed;
+    --surface: #ffffff;
+    --surface-2: #eae7dd;
+    --text: #21231f;
+    --text-muted: #6c6f64;
+    --border: #ded9cb;
+    --accent: #2f6f5e;
+    --accent-contrast: #ffffff;
+    --accent-soft: #dce9e3;
+    --danger: #b4483a;
+    --danger-soft: #f3ded9;
+    --shadow: 0 1px 2px rgba(33, 35, 31, 0.04), 0 12px 28px -12px rgba(33, 35, 31, 0.18);
+    --radius: 14px;
+    --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+    --font-body: "Manrope", -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  }
+
+  /* Thème sombre : suit les réglages du système... */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12181a;
+      --surface: #1b2224;
+      --surface-2: #232b2d;
+      --text: #edeeea;
+      --text-muted: #9aa39d;
+      --border: #33393b;
+      --accent: #5fb69d;
+      --accent-contrast: #0b1210;
+      --accent-soft: #1d332d;
+      --danger: #e08a76;
+      --danger-soft: #3a241f;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 28px -12px rgba(0, 0, 0, 0.5);
+    }
+  }
+  /* ...ou un choix explicite de l'utilisateur (surcharge le système). */
+  :root[data-theme="dark"] {
+    --bg: #12181a;
+    --surface: #1b2224;
+    --surface-2: #232b2d;
+    --text: #edeeea;
+    --text-muted: #9aa39d;
+    --border: #33393b;
+    --accent: #5fb69d;
+    --accent-contrast: #0b1210;
+    --accent-soft: #1d332d;
+    --danger: #e08a76;
+    --danger-soft: #3a241f;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 28px -12px rgba(0, 0, 0, 0.5);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    display: flex;
+    justify-content: center;
+    padding-inline: 16px;
+    padding-block: max(40px, env(safe-area-inset-top, 0px)) 40px;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 480px;
+  }
+
+  /* ---------- En-tête ---------- */
+  .app-header { margin-bottom: 20px; }
+
+  .title-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 2rem;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  .counter {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 0.92rem;
+    margin: 6px 0 0;
+  }
+
+  /* ---------- Formulaire d'ajout ---------- */
+  .add-form {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  #task-input {
+    flex: 1;
+    min-width: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font: inherit;
+    color: var(--text);
+    box-shadow: var(--shadow);
+  }
+
+  #task-input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  #task-input.shake {
+    animation: shake 0.35s;
+    border-color: var(--danger);
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+  }
+
+  .btn-add {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--accent);
+    color: var(--accent-contrast);
+    border: none;
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .btn-add:hover { filter: brightness(1.05); }
+  .btn-add:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn-add svg { width: 16px; height: 16px; }
+
+  /* ---------- Filtres ---------- */
+  .filters {
+    display: flex;
+    gap: 4px;
+    background: var(--surface-2);
+    border-radius: 999px;
+    padding: 4px;
+    margin-bottom: 16px;
+    width: fit-content;
+    max-width: 100%;
+  }
+
+  .filter-btn {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 7px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+
+  .filter-btn[aria-selected="true"] {
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: var(--shadow);
+  }
+
+  .filter-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- Liste de tâches ---------- */
+  .task-list {
+    list-style: none;
+    margin: 0 0 12px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .task-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 12px 12px 14px;
+    box-shadow: var(--shadow);
+    animation: appear 0.18s ease-out;
+  }
+
+  @keyframes appear {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .task-item.leaving {
+    animation: leave 0.16s ease-in forwards;
+  }
+
+  @keyframes leave {
+    to { opacity: 0; transform: scale(0.97); }
+  }
+
+  /* Case à cocher personnalisée : l'input natif reste accessible
+     (clavier, lecteur d'écran) mais devient invisible ; c'est le
+     <span> voisin qui dessine le rond + la coche. */
+  .task-checkbox {
+    position: relative;
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    margin-top: 1px;
+  }
+
+  .task-checkbox input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    margin: 0;
+    cursor: pointer;
+  }
+
+  .task-checkbox .dot {
+    position: absolute;
+    inset: 0;
+    border: 1.5px solid var(--border);
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .task-checkbox .dot svg {
+    width: 13px;
+    height: 13px;
+    opacity: 0;
+    transform: scale(0.6);
+    transition: opacity 0.15s, transform 0.15s;
+    color: var(--accent-contrast);
+  }
+
+  .task-checkbox input:checked + .dot {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .task-checkbox input:checked + .dot svg {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .task-checkbox input:focus-visible + .dot {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .task-text {
+    flex: 1;
+    min-width: 0;
+    word-wrap: break-word;
+    font-size: 0.98rem;
+    line-height: 1.4;
+    padding-top: 1px;
+  }
+
+  .task-item.done .task-text {
+    text-decoration: line-through;
+    color: var(--text-muted);
+  }
+
+  .btn-delete {
+    flex-shrink: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    padding: 4px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+  }
+
+  .btn-delete:hover { background: var(--danger-soft); color: var(--danger); }
+  .btn-delete:focus-visible { outline: 2px solid var(--danger); outline-offset: 1px; }
+  .btn-delete svg { width: 16px; height: 16px; }
+
+  /* ---------- État vide ---------- */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+    color: var(--text-muted);
+    padding: 36px 16px;
+    font-size: 0.92rem;
+  }
+
+  .empty-state svg { width: 40px; height: 40px; color: var(--border); }
+
+  /* ---------- Pied de page ---------- */
+  .app-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    padding-top: 4px;
+  }
+
+  .btn-link {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+    padding: 4px;
+  }
+
+  .btn-link:hover { color: var(--danger); }
+  .btn-link:disabled { opacity: 0.4; cursor: default; }
+  .btn-link:disabled:hover { color: var(--text-muted); }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Manrope:wght@500;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+
+<div class="app">
+  <header class="app-header">
+    <div class="title-row">
+      <h1>Pense-bête</h1>
+      <span class="counter" id="counter" aria-live="polite">0</span>
+    </div>
+    <p class="subtitle">Vos tâches restent enregistrées dans ce navigateur, même après un rafraîchissement.</p>
+  </header>
+
+  <form id="add-form" class="add-form" autocomplete="off">
+    <input
+      type="text"
+      id="task-input"
+      name="task"
+      placeholder="Qu'avez-vous à faire ?"
+      aria-label="Texte de la nouvelle tâche"
+      maxlength="200"
+    />
+    <button type="submit" class="btn-add">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Ajouter
+    </button>
+  </form>
+
+  <div class="filters" role="tablist" aria-label="Filtrer les tâches">
+    <button class="filter-btn" type="button" data-filter="all" role="tab" aria-selected="true">Toutes</button>
+    <button class="filter-btn" type="button" data-filter="active" role="tab" aria-selected="false">Actives</button>
+    <button class="filter-btn" type="button" data-filter="done" role="tab" aria-selected="false">Terminées</button>
+  </div>
+
+  <ul id="task-list" class="task-list"></ul>
+
+  <p id="empty-state" class="empty-state" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8.5 12.5l2.2 2.2L16 9.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span id="empty-message">Rien pour l'instant. Ajoutez votre première tâche ci-dessus.</span>
+  </p>
+
+  <footer class="app-footer">
+    <span id="remaining-text">0 tâche restante</span>
+    <button id="clear-done" class="btn-link" type="button">Effacer les terminées</button>
+  </footer>
+</div>
+
+<script>
+  /* ============================================================
+     2) LOGIQUE DE L'APPLICATION
+     Organisation en 4 blocs :
+       a) Persistance (lecture/écriture dans localStorage)
+       b) État en mémoire (le tableau `tasks`)
+       c) Rendu (fabrique le DOM à partir de l'état)
+       d) Événements (relient les actions de l'utilisateur à l'état)
+     ============================================================ */
+
+  // Clé utilisée dans localStorage. La préfixer évite les collisions
+  // avec d'autres scripts qui utiliseraient aussi localStorage.
+  const STORAGE_KEY = "pense-bete:tasks";
+
+  /**
+   * a) PERSISTANCE
+   * localStorage ne stocke que des chaînes de caractères : on doit donc
+   * sérialiser/désérialiser en JSON. On entoure les accès de try/catch
+   * car localStorage peut être indisponible (navigation privée, quota
+   * dépassé, restrictions du navigateur) : dans ce cas, l'app continue
+   * de fonctionner pour la session en cours, simplement sans persistance.
+   */
+  function loadTasks() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (err) {
+      console.warn("Impossible de lire les tâches sauvegardées :", err);
+      return [];
+    }
+  }
+
+  function saveTasks(tasks) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    } catch (err) {
+      console.warn("Impossible d'enregistrer les tâches :", err);
+    }
+  }
+
+  /**
+   * b) ÉTAT EN MÉMOIRE
+   * `tasks` est la source de vérité pendant que la page est ouverte.
+   * Chaque tâche est un objet simple : { id, text, done }.
+   * On la recharge une seule fois au démarrage depuis localStorage.
+   */
+  let tasks = loadTasks();
+  let currentFilter = "all"; // "all" | "active" | "done"
+
+  // Génère un identifiant unique pour chaque tâche (avec repli si
+  // crypto.randomUUID n'est pas disponible sur d'anciens navigateurs).
+  function makeId() {
+    return (crypto.randomUUID && crypto.randomUUID()) ||
+      `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }
+
+  function addTask(text) {
+    tasks.push({ id: makeId(), text: text.trim(), done: false });
+    saveTasks(tasks);
+    render();
+  }
+
+  function toggleTask(id) {
+    const task = tasks.find((t) => t.id === id);
+    if (task) task.done = !task.done;
+    saveTasks(tasks);
+    render();
+  }
+
+  function deleteTask(id) {
+    tasks = tasks.filter((t) => t.id !== id);
+    saveTasks(tasks);
+    render();
+  }
+
+  function clearCompleted() {
+    tasks = tasks.filter((t) => !t.done);
+    saveTasks(tasks);
+    render();
+  }
+
+  /**
+   * c) RENDU
+   * On reconstruit la liste affichée à chaque changement d'état.
+   * Pour une to-do list de cette taille, régénérer le DOM à chaque
+   * fois est largement assez rapide et garde le code simple — pas
+   * besoin d'un diff virtuel ici.
+   *
+   * Important : le texte de la tâche est inséré via `textContent`
+   * (jamais via innerHTML), ce qui empêche tout code HTML tapé par
+   * l'utilisateur d'être interprété par le navigateur.
+   */
+  function getFilteredTasks() {
+    if (currentFilter === "active") return tasks.filter((t) => !t.done);
+    if (currentFilter === "done") return tasks.filter((t) => t.done);
+    return tasks;
+  }
+
+  function createTaskElement(task) {
+    const li = document.createElement("li");
+    li.className = "task-item" + (task.done ? " done" : "");
+    li.dataset.id = task.id;
+
+    li.innerHTML = `
+      <span class="task-checkbox">
+        <input type="checkbox" id="check-${task.id}" ${task.done ? "checked" : ""} aria-label="Marquer comme terminée">
+        <span class="dot">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+        </span>
+      </span>
+      <span class="task-text"></span>
+      <button class="btn-delete" type="button" aria-label="Supprimer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0-.9 13a1 1 0 01-1 .9H8.9a1 1 0 01-1-.9L7 7"/></svg>
+      </button>
+    `;
+
+    // Texte inséré séparément et en toute sécurité via textContent.
+    li.querySelector(".task-text").textContent = task.text;
+
+    li.querySelector('input[type="checkbox"]').addEventListener("change", () => toggleTask(task.id));
+    li.querySelector(".btn-delete").addEventListener("click", () => {
+      // Petite animation de sortie avant de retirer réellement la tâche.
+      li.classList.add("leaving");
+      li.addEventListener("animationend", () => deleteTask(task.id), { once: true });
+    });
+
+    return li;
+  }
+
+  function render() {
+    const list = document.getElementById("task-list");
+    const visible = getFilteredTasks();
+
+    list.replaceChildren(...visible.map(createTaskElement));
+
+    // Compteurs et état vide.
+    const remaining = tasks.filter((t) => !t.done).length;
+    document.getElementById("counter").textContent = tasks.length;
+    document.getElementById("remaining-text").textContent =
+      `${remaining} tâche${remaining !== 1 ? "s" : ""} restante${remaining !== 1 ? "s" : ""}`;
+
+    const emptyState = document.getElementById("empty-state");
+    const emptyMessage = document.getElementById("empty-message");
+    if (visible.length === 0) {
+      emptyMessage.textContent =
+        tasks.length === 0
+          ? "Rien pour l'instant. Ajoutez votre première tâche ci-dessus."
+          : "Aucune tâche dans ce filtre.";
+      emptyState.hidden = false;
+    } else {
+      emptyState.hidden = true;
+    }
+
+    document.getElementById("clear-done").disabled = tasks.every((t) => !t.done);
+  }
+
+  /**
+   * d) ÉVÉNEMENTS
+   * Relie les interactions de l'utilisateur (soumission du formulaire,
+   * clic sur un filtre, clic sur "Effacer les terminées") aux fonctions
+   * d'état ci-dessus.
+   */
+  const form = document.getElementById("add-form");
+  const input = document.getElementById("task-input");
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const text = input.value.trim();
+
+    if (!text) {
+      // Petit retour visuel si l'utilisateur valide un champ vide.
+      input.classList.remove("shake");
+      // Forcer un reflow pour pouvoir rejouer l'animation.
+      void input.offsetWidth;
+      input.classList.add("shake");
+      input.focus();
+      return;
+    }
+
+    addTask(text);
+    input.value = "";
+    input.focus();
+  });
+
+  document.querySelectorAll(".filter-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      currentFilter = btn.dataset.filter;
+      document.querySelectorAll(".filter-btn").forEach((b) =>
+        b.setAttribute("aria-selected", String(b === btn))
+      );
+      render();
+    });
+  });
+
+  document.getElementById("clear-done").addEventListener("click", clearCompleted);
+
+  // Premier rendu, avec les tâches éventuellement déjà sauvegardées.
+  render();
+</script>
