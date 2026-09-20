@@ -21,6 +21,7 @@
 ## ✅ Completed Projects
 - ✅ JavaScript Calculator (with HTML, CSS, JavaScript) — minor bugs to fix
 - ✅ TODO App with localStorage — minor bugs to fix
+- ✅ Blog (CRUD complet!)
 
 ## 📈 Progress
 - Core Concepts: 100% ✅
