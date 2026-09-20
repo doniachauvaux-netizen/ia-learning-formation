@@ -18,16 +18,18 @@
 - ✅ LLM Tricks & Best Practices
 - ✅ Applications to SDLC
 
-## ✅ Completed Projects
-- ✅ JavaScript Calculator (with HTML, CSS, JavaScript) — minor bugs to fix
-- ✅ TODO App with localStorage — minor bugs to fix
-- ✅ Blog (CRUD complet!)
+## 🏆 Training Complete!
+- ✅ JavaScript Calculator
+- ✅ TODO App with localStorage
+- ✅ Blog with full CRUD
+- ✅ Chat App
+- ✅ Real-world RACS prompt built for AXA incident routing
 
-## 📈 Progress
+## 📈 Final Progress
 - Core Concepts: 100% ✅
-- Prompting Techniques (RACS, Few-shot, Chain of Thoughts): 75% (in progress)
-- Projects Completed: 2 (debugging in progress)
-- Training Slides: ~50% (in progress)
+- Prompting Techniques (RACS, SDD): 100% ✅
+- Projects Completed: 4/4 ✅
+- Training Status: COMPLETE 🎉
 
 ## 🎓 Key Learnings
 - Understand AI fundamentals (ML, DL, NLP)
