@@ -6,10 +6,11 @@
 // ── 1. ÉTAT DE LA CALCULATRICE ───────────────────────────────────────────────
 // Un seul objet regroupe toutes les données nécessaires au fonctionnement.
 const state = {
-  current:  '0',    // Nombre actuellement affiché à l'écran
-  previous: null,   // Premier opérande mémorisé (ex. "12" dans "12 + 3")
-  operator: null,   // Opération en attente : '+', '−', '×' ou '÷'
-  justCalc: false   // Vrai juste après avoir appuyé sur '=' (pour repartir proprement)
+  current:  '0',        // Nombre actuellement affiché à l'écran
+  previous: null,        // Premier opérande mémorisé (ex. "12" dans "12 + 3")
+  operator: null,        // Opération en attente : '+', '−', '×' ou '÷'
+  justCalc: false,       // Vrai juste après avoir appuyé sur '=' (pour repartir proprement)
+  freshOperand: false    // Vrai juste après avoir cliqué sur un opérateur (pour repartir sur un NOUVEAU nombre)
 };
 
 
@@ -67,6 +68,11 @@ function handleAction(action, val) {
       state.previous = null;
       state.operator = null;
       state.justCalc = false;
+    } else if (state.freshOperand) {
+      // On vient de cliquer sur un opérateur : on efface l'ancien nombre
+      // et on repart de zéro sur le nouveau (c'est ça qui corrige le bug du "896")
+      state.current = val;
+      state.freshOperand = false;
     } else if (state.current === '0') {
       state.current = val;          // On remplace le '0' initial (évite "07")
     } else {
@@ -81,6 +87,12 @@ function handleAction(action, val) {
       state.justCalc = false;
       return render();
     }
+    if (state.freshOperand) {
+      // Même logique : nouveau nombre décimal après un opérateur
+      state.current = '0,';
+      state.freshOperand = false;
+      return render();
+    }
     // On refuse d'ajouter une 2e virgule si le nombre en a déjà une
     if (!state.current.includes(',')) {
       state.current += ',';
@@ -92,7 +104,7 @@ function handleAction(action, val) {
     // On convertit la virgule en point pour que parseFloat fonctionne
     const n = state.current.replace(',', '.');
 
-    if (state.operator && !state.justCalc) {
+    if (state.operator && !state.justCalc && !state.freshOperand) {
       // Si une opération était déjà en cours, on la termine d'abord
       // Exemple : "3 + 5 ×" → on calcule d'abord "3 + 5 = 8", puis on enregistre "×"
       const res = compute(state.previous, n, state.operator);
@@ -105,6 +117,7 @@ function handleAction(action, val) {
 
     state.operator = val;           // On enregistre le nouvel opérateur
     state.justCalc = false;
+    state.freshOperand = true;      // Le prochain chiffre doit repartir de zéro
     return render();
   }
 
@@ -123,6 +136,7 @@ function handleAction(action, val) {
     state.previous = null;
     state.operator = null;
     state.justCalc = true;          // Signal : le prochain chiffre repart à zéro
+    state.freshOperand = false;
 
     mainEl.textContent = state.current;
     return; // On gère l'affichage manuellement ici, pas besoin de render()
@@ -134,6 +148,7 @@ function handleAction(action, val) {
     state.previous = null;
     state.operator = null;
     state.justCalc = false;
+    state.freshOperand = false;
   }
 
   // ── CAS 6 : +/− — INVERSE LE SIGNE ─────────────────────────────────────
