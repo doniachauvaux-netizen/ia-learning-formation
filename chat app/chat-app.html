@@ -1,0 +1,633 @@
+<title>Chatline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  /* ==========================================================================
+     DESIGN TOKENS
+     One palette, defined three times (light / dark-by-OS / dark-by-toggle) so
+     the page looks right regardless of which theme state the viewer is in.
+     Every color used below is one of these tokens - never a raw hex value.
+     ========================================================================== */
+  :root {
+    --bg: #f6f4f1;               /* page background behind the chat card   */
+    --panel: #ffffff;            /* chat card + header + composer surface  */
+    --panel-2: #fbfaf8;          /* messages scroll area (barely-tinted)   */
+    --border: #e8e3db;
+    --text: #1c1a22;
+    --text-dim: #8a8697;
+    --accent: #5b4fe0;           /* brand indigo: my bubbles, send button  */
+    --accent-ink: #ffffff;       /* text/icons drawn on top of --accent    */
+    --bubble-in: #efedfb;        /* contact's bubble fill                  */
+    --bubble-in-text: #24222f;
+    --online: #2fbf78;
+    --shadow: 0 24px 60px -24px rgb(20 16 40 / 0.35);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #131117;
+      --panel: #1b1922;
+      --panel-2: #201e28;
+      --border: #2d2b37;
+      --text: #f1eff7;
+      --text-dim: #8c8898;
+      --accent: #8d7dff;
+      --accent-ink: #14121c;
+      --bubble-in: #262433;
+      --bubble-in-text: #edebf5;
+      --online: #3ddb8d;
+      --shadow: 0 24px 60px -20px rgb(0 0 0 / 0.6);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #131117;
+    --panel: #1b1922;
+    --panel-2: #201e28;
+    --border: #2d2b37;
+    --text: #f1eff7;
+    --text-dim: #8c8898;
+    --accent: #8d7dff;
+    --accent-ink: #14121c;
+    --bubble-in: #262433;
+    --bubble-in-text: #edebf5;
+    --online: #3ddb8d;
+    --shadow: 0 24px 60px -20px rgb(0 0 0 / 0.6);
+  }
+
+  /* ==========================================================================
+     BASE / PAGE
+     html+body get height:100% (not 100vh) so the app sits correctly inside
+     the safe-area padding the artifact platform already adds to :root.
+     ========================================================================== */
+  html, body { height: 100%; }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    background-image: radial-gradient(60% 50% at 50% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: var(--text);
+  }
+
+  * { box-sizing: border-box; }
+
+  /* Screen-reader-only text (used for the live-region status message) */
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
+
+  /* ==========================================================================
+     APP SHELL
+     A phone-shaped card on desktop; full-bleed like a real messaging app on
+     narrow viewports. flex-direction: column with the middle section
+     flex:1/overflow:auto is what makes header + composer stay put while only
+     the message list scrolls.
+     ========================================================================== */
+  .app {
+    width: 100%;
+    height: 100%;
+    max-width: 460px;
+    max-height: 800px;
+    display: flex;
+    flex-direction: column;
+    background: var(--panel);
+    overflow: hidden;
+  }
+
+  @media (min-width: 640px) {
+    .app {
+      height: min(800px, 90vh);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+    }
+  }
+
+  /* ---- Header ------------------------------------------------------------ */
+  .chat-header {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(155deg, var(--accent), color-mix(in srgb, var(--accent) 60%, #ff8fd0));
+    color: var(--accent-ink);
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+  }
+
+  .header-text { min-width: 0; flex: 1; }
+  .header-name {
+    font-family: 'Sora', sans-serif;
+    font-weight: 600;
+    font-size: 15.5px;
+    line-height: 1.25;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .header-status {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 12.5px;
+    color: var(--text-dim);
+  }
+  .status-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--online);
+    flex: 0 0 auto;
+  }
+
+  .clear-btn {
+    flex: 0 0 auto;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-family: inherit;
+    font-size: 12.5px;
+    padding: 7px 11px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: color .15s ease, border-color .15s ease, background .15s ease;
+  }
+  .clear-btn:hover { color: var(--text); border-color: var(--text-dim); }
+  .clear-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---- Message list -------------------------------------------------------
+     This is the ONLY scrolling element in the app. */
+  .messages {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 18px 16px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: var(--panel-2);
+    scroll-behavior: smooth;
+  }
+
+  .date-divider {
+    align-self: center;
+    font-size: 11.5px;
+    color: var(--text-dim);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 3px 11px;
+    border-radius: 999px;
+    margin: 6px 0 4px;
+  }
+
+  .bubble-row { display: flex; }
+  .bubble-row.mine { justify-content: flex-end; }
+  .bubble-row.theirs { justify-content: flex-start; }
+
+  .bubble {
+    max-width: 78%;
+    padding: 9px 13px 7px;
+    border-radius: 16px;
+    font-size: 14.5px;
+    line-height: 1.4;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+    animation: bubble-in .18s ease-out;
+  }
+  @keyframes bubble-in {
+    from { opacity: 0; transform: translateY(4px) scale(.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .bubble-row.mine .bubble {
+    background: var(--accent);
+    color: var(--accent-ink);
+    border-bottom-right-radius: 4px;
+  }
+  .bubble-row.theirs .bubble {
+    background: var(--bubble-in);
+    color: var(--bubble-in-text);
+    border-bottom-left-radius: 4px;
+  }
+
+  .bubble-time {
+    display: block;
+    text-align: right;
+    font-size: 10.5px;
+    font-variant-numeric: tabular-nums;
+    opacity: .65;
+    margin-top: 3px;
+  }
+
+  /* ---- Typing indicator ---------------------------------------------------- */
+  .typing-row { display: flex; }
+  .typing-bubble {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--bubble-in);
+    padding: 11px 14px;
+    border-radius: 16px;
+    border-bottom-left-radius: 4px;
+  }
+  .typing-bubble span {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--bubble-in-text);
+    opacity: .5;
+    animation: typing-bounce 1.1s infinite ease-in-out;
+  }
+  .typing-bubble span:nth-child(2) { animation-delay: .15s; }
+  .typing-bubble span:nth-child(3) { animation-delay: .3s; }
+  @keyframes typing-bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: .35; }
+    30% { transform: translateY(-4px); opacity: .9; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .bubble { animation: none; }
+    .typing-bubble span { animation: none; opacity: .6; }
+  }
+
+  /* ---- Composer ------------------------------------------------------------ */
+  .composer {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    padding: 12px 14px;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+  }
+
+  #messageInput {
+    flex: 1;
+    resize: none;
+    max-height: 110px;
+    padding: 10px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--panel-2);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14.5px;
+    line-height: 1.35;
+  }
+  #messageInput:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  #messageInput::placeholder { color: var(--text-dim); }
+
+  #sendBtn {
+    flex: 0 0 auto;
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--accent);
+    color: var(--accent-ink);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: transform .1s ease, opacity .15s ease;
+  }
+  #sendBtn:hover { transform: translateY(-1px); }
+  #sendBtn:active { transform: translateY(0) scale(.94); }
+  #sendBtn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+  #sendBtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  #sendBtn svg { width: 17px; height: 17px; }
+
+  /* Thin scrollbar, themed (WebKit) */
+  .messages::-webkit-scrollbar { width: 8px; }
+  .messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; }
+</style>
+
+<div class="app">
+
+  <!-- ============================== HEADER ============================== -->
+  <header class="chat-header">
+    <div class="avatar" aria-hidden="true">R</div>
+    <div class="header-text">
+      <div class="header-name">Rae</div>
+      <div class="header-status"><span class="status-dot" aria-hidden="true"></span>Online</div>
+    </div>
+    <button type="button" id="clearBtn" class="clear-btn" title="Clear conversation">Clear</button>
+  </header>
+
+  <!-- ======================== MESSAGE LIST (scrolls) ===================== -->
+  <!-- aria-live="polite" announces new messages to screen readers as they arrive -->
+  <main id="messages" class="messages" aria-live="polite" aria-label="Conversation with Rae"></main>
+
+  <p id="statusText" class="sr-only" role="status"></p>
+
+  <!-- ============================== COMPOSER ============================= -->
+  <form id="composer" class="composer">
+    <textarea
+      id="messageInput"
+      rows="1"
+      placeholder="Message Rae…"
+      aria-label="Message"
+      autocomplete="off"
+    ></textarea>
+    <button type="submit" id="sendBtn" aria-label="Send message">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="4" y1="20" x2="20" y2="4"></line>
+        <polygon points="20 4 12 12.5 9 20 4 20 4 15 11.5 12" fill="currentColor" stroke="none"></polygon>
+      </svg>
+    </button>
+  </form>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ========================================================================
+   * 1. STATE + STORAGE
+   *
+   *    Every message is a plain object: { id, from, text, ts }
+   *      - from: 'me'      -> the person using the app (right-aligned)
+   *              'contact' -> the simulated contact, "Rae" (left-aligned)
+   *      - ts:   milliseconds since epoch (Date.now()), formatted at render time
+   *
+   *    The whole array is (de)serialized to localStorage as JSON. Every call
+   *    into localStorage is wrapped in try/catch: private-browsing modes,
+   *    blocked site data, or a full quota can all make it throw, and the app
+   *    should still work (just without persistence) rather than crash.
+   * ===================================================================== */
+
+  const STORAGE_KEY = 'chatline.messages.v1';
+
+  let messages = loadMessages();
+  let nextId = messages.reduce((max, m) => Math.max(max, m.id), 0) + 1;
+
+  function loadMessages() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : null;
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (err) {
+      console.warn('Chatline: could not read localStorage, starting fresh.', err);
+      return [];
+    }
+  }
+
+  function saveMessages() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    } catch (err) {
+      console.warn('Chatline: could not write to localStorage.', err);
+    }
+  }
+
+  // First-ever visit (nothing in localStorage yet): seed one message from
+  // the contact so the UI demonstrates its own layout instead of loading empty.
+  if (messages.length === 0) {
+    messages.push({
+      id: nextId++,
+      from: 'contact',
+      text: "Hey! \u{1F44B} This is a simulated chat — type something below and I'll write back. Refresh the page and this conversation will still be here.",
+      ts: Date.now() - 60 * 1000,
+    });
+    saveMessages();
+  }
+
+  /* ========================================================================
+   * 2. DOM REFERENCES
+   * ===================================================================== */
+
+  const messagesEl = document.getElementById('messages');
+  const composerEl = document.getElementById('composer');
+  const inputEl = document.getElementById('messageInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const statusEl = document.getElementById('statusText');
+
+  /* ========================================================================
+   * 3. RENDERING
+   *
+   *    render() redraws the full list from `messages`. For a chat this size
+   *    a full re-render on every change is simple and fast enough; a larger
+   *    app would instead append just the new bubble.
+   * ===================================================================== */
+
+  const timeFormatter = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' });
+
+  function formatTime(ts) {
+    return timeFormatter.format(new Date(ts));
+  }
+
+  // Returns "Today", "Yesterday", or a short date - used for the dividers
+  // that appear whenever consecutive messages fall on different days.
+  function formatDayLabel(ts) {
+    const d = new Date(ts);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+    const sameDay = (a, b) =>
+      a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+
+    if (sameDay(d, today)) return 'Today';
+    if (sameDay(d, yesterday)) return 'Yesterday';
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  }
+
+  function render() {
+    messagesEl.innerHTML = '';
+    const frag = document.createDocumentFragment();
+
+    let lastDayLabel = null;
+    for (const msg of messages) {
+      const dayLabel = formatDayLabel(msg.ts);
+      if (dayLabel !== lastDayLabel) {
+        const divider = document.createElement('div');
+        divider.className = 'date-divider';
+        divider.textContent = dayLabel;
+        frag.appendChild(divider);
+        lastDayLabel = dayLabel;
+      }
+
+      const row = document.createElement('div');
+      row.className = 'bubble-row ' + (msg.from === 'me' ? 'mine' : 'theirs');
+
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+
+      const textNode = document.createElement('span');
+      textNode.textContent = msg.text; // textContent, never innerHTML: keeps user input as plain text (no HTML/script injection)
+
+      const timeNode = document.createElement('span');
+      timeNode.className = 'bubble-time';
+      timeNode.textContent = formatTime(msg.ts);
+
+      bubble.appendChild(textNode);
+      bubble.appendChild(timeNode);
+      row.appendChild(bubble);
+      frag.appendChild(row);
+    }
+
+    messagesEl.appendChild(frag);
+    scrollToBottom();
+  }
+
+  function scrollToBottom() {
+    // Runs after the browser has laid out the new bubble, so scrollHeight is accurate.
+    requestAnimationFrame(() => {
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    });
+  }
+
+  /* ========================================================================
+   * 4. TYPING INDICATOR
+   * ===================================================================== */
+
+  let typingRowEl = null;
+
+  function showTyping() {
+    if (typingRowEl) return;
+    typingRowEl = document.createElement('div');
+    typingRowEl.className = 'typing-row';
+    typingRowEl.innerHTML =
+      '<div class="typing-bubble" aria-hidden="true"><span></span><span></span><span></span></div>';
+    messagesEl.appendChild(typingRowEl);
+    scrollToBottom();
+  }
+
+  function hideTyping() {
+    if (typingRowEl) {
+      typingRowEl.remove();
+      typingRowEl = null;
+    }
+  }
+
+  /* ========================================================================
+   * 5. SIMULATED CONTACT REPLIES
+   *
+   *    No network call, no real AI - just a small set of canned response
+   *    pools chosen by a light keyword match on the user's message, so
+   *    replies feel at least somewhat responsive. This is the piece you'd
+   *    swap out for a real API call (fetch to a chat backend) later.
+   * ===================================================================== */
+
+  const REPLY_POOLS = {
+    greeting: [
+      "Hey there! How's it going?",
+      'Hi! Good to hear from you \u{1F642}',
+      'Hello! What’s up?',
+    ],
+    howAreYou: [
+      "I'm doing well, thanks for asking! You?",
+      'Pretty good over here. How about you?',
+    ],
+    thanks: [
+      'Anytime!',
+      "You're welcome \u{1F642}",
+    ],
+    bye: [
+      'Talk soon!',
+      'Bye for now \u{1F44B}',
+      'See you later!',
+    ],
+    question: [
+      "That's a good question — let me think about it.",
+      "Hmm, I'm not totally sure, honestly.",
+      'Good question! What made you think of that?',
+    ],
+    default: [
+      'That makes sense.',
+      'Got it, thanks for letting me know.',
+      'Interesting — tell me more?',
+      'Ha, fair enough.',
+      'I see what you mean.',
+      'Noted!',
+    ],
+  };
+
+  function pickReply(userText) {
+    const t = userText.toLowerCase();
+    let pool = REPLY_POOLS.default;
+
+    if (/\b(hi|hello|hey|yo)\b/.test(t)) pool = REPLY_POOLS.greeting;
+    else if (/how are you|how('| a)re u/.test(t)) pool = REPLY_POOLS.howAreYou;
+    else if (/\b(thanks|thank you|thx)\b/.test(t)) pool = REPLY_POOLS.thanks;
+    else if (/\b(bye|goodbye|see you|later|gtg)\b/.test(t)) pool = REPLY_POOLS.bye;
+    else if (t.trim().endsWith('?')) pool = REPLY_POOLS.question;
+
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  function queueSimulatedReply(userText) {
+    showTyping();
+    // Delay scales loosely with reply "thinking time" so it doesn't feel
+    // instant, but is capped so the demo stays snappy.
+    const delay = 550 + Math.random() * 1000;
+    setTimeout(() => {
+      hideTyping();
+      addMessage('contact', pickReply(userText));
+    }, delay);
+  }
+
+  /* ========================================================================
+   * 6. SENDING A MESSAGE
+   * ===================================================================== */
+
+  function addMessage(from, text) {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+
+    messages.push({ id: nextId++, from, text: trimmed, ts: Date.now() });
+    saveMessages();
+    render();
+
+    statusEl.textContent = (from === 'me' ? 'You: ' : 'Rae: ') + trimmed;
+
+    if (from === 'me') queueSimulatedReply(trimmed);
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    const text = inputEl.value;
+    if (!text.trim()) return;
+    addMessage('me', text);
+    inputEl.value = '';
+    autosizeInput();
+    inputEl.focus();
+  }
+
+  // Enter sends the message; Shift+Enter inserts a newline (standard chat-app behavior).
+  function handleInputKeydown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      composerEl.requestSubmit();
+    }
+  }
+
+  // Grows the textarea as the user types a longer message, up to the CSS max-height.
+  function autosizeInput() {
+    inputEl.style.height = 'auto';
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 110) + 'px';
+  }
+
+  function handleClear() {
+    messages = [];
+    nextId = 1;
+    saveMessages();
+    render();
+    inputEl.focus();
+  }
+
+  /* ========================================================================
+   * 7. WIRE UP + INITIAL RENDER
+   * ===================================================================== */
+
+  composerEl.addEventListener('submit', handleSubmit);
+  inputEl.addEventListener('keydown', handleInputKeydown);
+  inputEl.addEventListener('input', autosizeInput);
+  clearBtn.addEventListener('click', handleClear);
+
+  render();
+})();
+</script>
