@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cahier de Bord</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="topbar-inner">
+      <h1 class="brand">Cahier de Bord</h1>
+      <p class="stats mono" id="stats"></p>
+    </div>
+  </div>
+
+  <main class="layout">
+
+    <!--
+      SPÉCIFICATION (approche « Spec Driven Development »)
+      ------------------------------------------------------
+      Avant d'écrire la logique, voici le contrat que le code respecte :
+
+      Modèle de données
+        Article   { id, titre, contenu, creeLe (ISO), modifieLe (ISO), commentaires[] }
+        Commentaire { id, texte, creeLe (ISO) }
+
+      Stockage
+        - Clé localStorage : "cahier-de-bord:articles:v1"
+        - Valeur : JSON.stringify(tableau d'Articles)
+        - Toute lecture/écriture est protégée par try/catch (quota dépassé,
+          navigation privée, storage désactivé → l'app continue de fonctionner
+          en mémoire, sans planter).
+
+      Fonctionnalités (CRUD articles + CRUD commentaires)
+        - Créer un article (titre + contenu obligatoires)
+        - Lister les articles, du plus récent au plus ancien
+        - Modifier un article existant (édition en ligne)
+        - Supprimer un article (avec confirmation)
+        - Ajouter un commentaire sous un article
+        - Supprimer un commentaire
+        - Tout est relu depuis localStorage au chargement → persistance
+          après rafraîchissement de la page.
+    -->
+
+    <section class="composer" aria-label="Nouvel article">
+      <h2 class="composer-title">Nouvel article</h2>
+      <form id="new-article-form" data-form="new-article" novalidate>
+        <div class="field">
+          <label class="field-label" for="new-title">Titre</label>
+          <input type="text" id="new-title" name="titre" placeholder="Un titre percutant…" maxlength="120" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="new-content">Contenu</label>
+          <textarea id="new-content" name="contenu" rows="4" placeholder="Racontez quelque chose…"></textarea>
+        </div>
+        <div class="composer-actions">
+          <span class="hint" id="new-error" role="alert"></span>
+          <button type="submit" class="btn btn-primary">Publier</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="feed" id="feed" aria-label="Articles"></section>
+
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
