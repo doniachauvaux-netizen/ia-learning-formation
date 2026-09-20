@@ -101,12 +101,12 @@ function createTaskElement(task) {
   li.dataset.id = task.id;
 
   li.innerHTML = `
-    <span class="task-checkbox">
+    <label class="task-checkbox" for="check-${task.id}">
       <input type="checkbox" id="check-${task.id}" ${task.done ? "checked" : ""} aria-label="Marquer comme terminée">
       <span class="dot">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
       </span>
-    </span>
+    </label>
     <span class="task-text"></span>
     <button class="btn-delete" type="button" aria-label="Supprimer">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0-.9 13a1 1 0 01-1 .9H8.9a1 1 0 01-1-.9L7 7"/></svg>
