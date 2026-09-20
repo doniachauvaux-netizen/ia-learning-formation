@@ -1,386 +1,276 @@
-/* ================================================================
-   CAHIER DE BORD — mini blog CRUD en JavaScript natif
-   ================================================================
-   Ce fichier est volontiers commenté : l'objectif annoncé est de
-   s'exercer à la gestion de données côté client (state + storage),
-   pas seulement d'obtenir une app qui marche.
+/* ============================================================
+   JETONS DE COULEUR (design tokens)
+   — définis une seule fois sur :root (thème clair par défaut),
+     puis redéfinis pour le thème sombre. On ne code JAMAIS une
+     couleur "en dur" ailleurs : tout passe par ces variables.
+   ============================================================ */
+:root {
+  color-scheme: light dark;
+  --bg: #f6f4ee;
+  --surface: #ffffff;
+  --surface-2: #efece3;
+  --ink: #1f2420;
+  --ink-soft: #5c665f;
+  --ink-faint: #8b948c;
+  --border: #e1ddd0;
+  --accent: #3e5c4e;
+  --accent-strong: #2c4238;
+  --accent-soft: #dfe8e0;
+  --danger: #a1382f;
+  --danger-soft: #f3e1de;
+  --shadow: 0 1px 2px rgba(31, 36, 32, 0.04), 0 6px 20px rgba(31, 36, 32, 0.06);
+}
 
-   Plan du script :
-     1. Constantes & état en mémoire
-     2. Accès au stockage (lire/écrire localStorage)
-     3. Utilitaires (id, date, échappement HTML)
-     4. Opérations CRUD sur les articles et les commentaires
-     5. Rendu (état -> DOM)
-     6. Écouteurs d'événements (délégation)
-     7. Démarrage de l'application
-   ================================================================ */
-
-// ---------------------------------------------------------------
-// 1. CONSTANTES & ÉTAT
-// ---------------------------------------------------------------
-
-// Clé de stockage versionnée : si un jour le format des données
-// change, on peut passer à "v2" sans entrer en conflit avec
-// d'anciennes données incompatibles déjà présentes chez l'utilisateur.
-const CLE_STOCKAGE = "cahier-de-bord:articles:v1";
-
-// "état" de l'application : une seule source de vérité en mémoire.
-// Le rendu (render) est toujours une fonction de cet état : on ne
-// modifie jamais le DOM "à la main" en dehors de render().
-const etat = {
-  articles: [],       // tableau d'articles, voir modèle en tête de fichier
-  idEnEdition: null,  // id de l'article actuellement en mode édition (ou null)
-};
-
-const feedEl = document.getElementById("feed");
-const statsEl = document.getElementById("stats");
-const formNouvelArticle = document.getElementById("new-article-form");
-const champErreur = document.getElementById("new-error");
-
-// ---------------------------------------------------------------
-// 2. STOCKAGE (localStorage)
-// ---------------------------------------------------------------
-// localStorage peut échouer (navigation privée, quota dépassé,
-// stockage désactivé par l'utilisateur…). On isole donc tout accès
-// dans ces deux fonctions, chacune protégée par un try/catch, pour
-// que le reste du code n'ait jamais à s'en soucier.
-
-function chargerArticles() {
-  try {
-    const brut = localStorage.getItem(CLE_STOCKAGE);
-    if (brut === null) return null; // rien d'enregistré pour l'instant
-    const donnees = JSON.parse(brut);
-    return Array.isArray(donnees) ? donnees : null;
-  } catch (erreur) {
-    console.warn("[Cahier de Bord] Lecture du stockage impossible :", erreur);
-    return null;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141712;
+    --surface: #1c211a;
+    --surface-2: #232a20;
+    --ink: #eaeee6;
+    --ink-soft: #a3ada0;
+    --ink-faint: #6f796e;
+    --border: #2c3327;
+    --accent: #86c0a3;
+    --accent-strong: #a9d6bc;
+    --accent-soft: #24352b;
+    --danger: #e2938b;
+    --danger-soft: #3a231f;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 8px 24px rgba(0, 0, 0, 0.35);
   }
 }
 
-function sauvegarderArticles() {
-  try {
-    localStorage.setItem(CLE_STOCKAGE, JSON.stringify(etat.articles));
-  } catch (erreur) {
-    console.warn("[Cahier de Bord] Écriture dans le stockage impossible :", erreur);
-  }
+:root[data-theme="dark"] {
+  --bg: #141712;
+  --surface: #1c211a;
+  --surface-2: #232a20;
+  --ink: #eaeee6;
+  --ink-soft: #a3ada0;
+  --ink-faint: #6f796e;
+  --border: #2c3327;
+  --accent: #86c0a3;
+  --accent-strong: #a9d6bc;
+  --accent-soft: #24352b;
+  --danger: #e2938b;
+  --danger-soft: #3a231f;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
-// ---------------------------------------------------------------
-// 3. UTILITAIRES
-// ---------------------------------------------------------------
+* { box-sizing: border-box; }
 
-// Génère un identifiant suffisamment unique pour une app locale.
-// crypto.randomUUID() est la voie moderne ; on garde un repli au
-// cas où l'environnement d'exécution ne l'expose pas.
-function genererId() {
-  if (window.crypto && typeof window.crypto.randomUUID === "function") {
-    return window.crypto.randomUUID();
-  }
-  return "id-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
+html, body { margin: 0; }
+
+img { max-width: 100%; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  padding-inline: 16px;
 }
 
-function formaterDate(iso) {
-  try {
-    return new Date(iso).toLocaleDateString("fr-FR", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch (erreur) {
-    return iso;
-  }
+h1, h2, h3 { font-family: "Fraunces", Georgia, serif; margin: 0; text-wrap: balance; }
+
+.mono {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
 }
 
-// Échappe une chaîne avant de l'injecter dans du HTML.
-// Principe : on confie le texte à .textContent (qui ne l'interprète
-// jamais comme du HTML), puis on relit .innerHTML, qui contient
-// alors la version échappée (< devient &lt;, etc.). Indispensable
-// dès qu'on affiche du texte saisi par l'utilisateur avec
-// innerHTML, sous peine d'injection de script (XSS).
-function echapperHtml(texte) {
-  const div = document.createElement("div");
-  div.textContent = texte;
-  return div.innerHTML;
+/* ---------- en-tête ---------- */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  margin-inline: -16px;
+  padding-inline: 16px;
+}
+.topbar-inner {
+  max-width: 680px;
+  margin: 0 auto;
+  padding-block: 18px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.brand { font-size: clamp(1.4rem, 4vw, 1.85rem); font-weight: 600; color: var(--accent-strong); }
+.stats {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0;
 }
 
-function trouverArticle(id) {
-  return etat.articles.find((a) => a.id === id);
+.layout {
+  max-width: 680px;
+  margin: 0 auto;
+  padding-block: 28px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
 }
 
-// ---------------------------------------------------------------
-// 4. OPÉRATIONS CRUD
-// ---------------------------------------------------------------
+/* ---------- composeur (formulaire nouvel article) ---------- */
+.composer {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.composer-title {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-family: "IBM Plex Mono", monospace;
+  font-weight: 500;
+}
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field-label { font-size: 0.82rem; color: var(--ink-soft); font-weight: 500; }
+input[type="text"], textarea {
+  font: inherit;
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  resize: vertical;
+  width: 100%;
+}
+input[type="text"]:focus, textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.composer-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.hint { font-size: 0.82rem; color: var(--danger); flex: 1; }
 
-function creerArticle(titre, contenu) {
-  const maintenant = new Date().toISOString();
-  etat.articles.push({
-    id: genererId(),
-    titre: titre.trim(),
-    contenu: contenu.trim(),
-    creeLe: maintenant,
-    modifieLe: maintenant,
-    commentaires: [],
-  });
-  sauvegarderArticles();
+.btn {
+  font: inherit;
+  font-weight: 600;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 9px 16px;
+  cursor: pointer;
+}
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn-primary { background: var(--accent); color: var(--surface); }
+.btn-primary:hover { background: var(--accent-strong); }
+.btn-ghost { background: transparent; color: var(--ink-soft); border-color: var(--border); }
+.btn-ghost:hover { color: var(--ink); border-color: var(--ink-faint); }
+.btn-danger { background: transparent; color: var(--danger); border-color: var(--danger-soft); }
+.btn-danger:hover { background: var(--danger-soft); }
+.btn-sm { padding: 6px 11px; font-size: 0.82rem; }
+
+/* ---------- fil d'articles ---------- */
+.feed { display: flex; flex-direction: column; gap: 18px; }
+
+.empty {
+  text-align: center;
+  color: var(--ink-faint);
+  padding: 40px 20px;
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  font-size: 0.95rem;
 }
 
-function modifierArticle(id, titre, contenu) {
-  const article = trouverArticle(id);
-  if (!article) return;
-  article.titre = titre.trim();
-  article.contenu = contenu.trim();
-  article.modifieLe = new Date().toISOString();
-  sauvegarderArticles();
+.article {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+.article-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.article-title { font-size: 1.32rem; font-weight: 600; color: var(--ink); }
+.article-date {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 4px;
+}
+.article-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.article-body {
+  margin-top: 12px;
+  color: var(--ink-soft);
+  line-height: 1.65;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
-function supprimerArticle(id) {
-  etat.articles = etat.articles.filter((a) => a.id !== id);
-  sauvegarderArticles();
+.edit-form { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+.edit-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* ---------- commentaires ---------- */
+.comments {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.comments-label {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 10px;
+}
+.comment-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.comment {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--accent-soft);
+  border-radius: 10px;
+  padding: 9px 12px;
+}
+.comment-text { font-size: 0.9rem; overflow-wrap: anywhere; }
+.comment-date { font-size: 0.68rem; color: var(--ink-faint); display: block; margin-top: 3px; }
+.comment-delete {
+  background: none;
+  border: none;
+  color: var(--ink-faint);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 2px 4px;
+  flex-shrink: 0;
+}
+.comment-delete:hover { color: var(--danger); }
+.comment-form { display: flex; gap: 8px; }
+.comment-form input {
+  flex: 1;
+  padding: 8px 10px;
+  font-size: 0.88rem;
 }
 
-function ajouterCommentaire(idArticle, texte) {
-  const article = trouverArticle(idArticle);
-  if (!article) return;
-  article.commentaires.push({
-    id: genererId(),
-    texte: texte.trim(),
-    creeLe: new Date().toISOString(),
-  });
-  sauvegarderArticles();
+@media (prefers-reduced-motion: no-preference) {
+  .article, .comment { transition: box-shadow 0.15s ease; }
 }
 
-function supprimerCommentaire(idArticle, idCommentaire) {
-  const article = trouverArticle(idArticle);
-  if (!article) return;
-  article.commentaires = article.commentaires.filter((c) => c.id !== idCommentaire);
-  sauvegarderArticles();
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
-
-// ---------------------------------------------------------------
-// 5. RENDU — l'état devient du HTML
-// ---------------------------------------------------------------
-// On reconstruit tout le fil à chaque changement d'état plutôt que
-// de "patcher" le DOM à la main : c'est plus simple à raisonner
-// pour un exercice pédagogique, et largement assez rapide pour le
-// volume de données d'un blog personnel.
-
-function rendreCommentaire(idArticle, commentaire) {
-  return `
-    <li class="comment">
-      <span>
-        <span class="comment-text">${echapperHtml(commentaire.texte)}</span>
-        <span class="comment-date mono">${formaterDate(commentaire.creeLe)}</span>
-      </span>
-      <button
-        class="comment-delete"
-        type="button"
-        data-action="supprimer-commentaire"
-        data-id-article="${idArticle}"
-        data-id-commentaire="${commentaire.id}"
-        aria-label="Supprimer ce commentaire"
-      >✕</button>
-    </li>`;
-}
-
-function rendreCommentaires(article) {
-  const liste = article.commentaires
-    .map((c) => rendreCommentaire(article.id, c))
-    .join("");
-
-  return `
-    <div class="comments">
-      <p class="comments-label">${article.commentaires.length} commentaire(s)</p>
-      <ul class="comment-list">${liste}</ul>
-      <form class="comment-form" data-form="nouveau-commentaire" data-id-article="${article.id}">
-        <label class="sr-only" for="comment-input-${article.id}">Ajouter un commentaire</label>
-        <input type="text" id="comment-input-${article.id}" placeholder="Ajouter un commentaire…" maxlength="300" />
-        <button type="submit" class="btn btn-ghost btn-sm">Commenter</button>
-      </form>
-    </div>`;
-}
-
-function rendreArticleEnEdition(article) {
-  return `
-    <article class="article">
-      <form class="edit-form" data-form="modifier-article" data-id-article="${article.id}">
-        <div class="field">
-          <label class="field-label" for="edit-title-${article.id}">Titre</label>
-          <input type="text" id="edit-title-${article.id}" value="${echapperHtml(article.titre)}" maxlength="120" />
-        </div>
-        <div class="field">
-          <label class="field-label" for="edit-content-${article.id}">Contenu</label>
-          <textarea id="edit-content-${article.id}" rows="4">${echapperHtml(article.contenu)}</textarea>
-        </div>
-        <div class="edit-actions">
-          <button type="button" class="btn btn-ghost btn-sm" data-action="annuler-edition">Annuler</button>
-          <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
-        </div>
-      </form>
-      ${rendreCommentaires(article)}
-    </article>`;
-}
-
-function rendreArticleAffichage(article) {
-  const modifie = article.modifieLe !== article.creeLe;
-  return `
-    <article class="article">
-      <div class="article-head">
-        <div>
-          <h3 class="article-title">${echapperHtml(article.titre)}</h3>
-          <span class="article-date mono">
-            ${formaterDate(article.creeLe)}${modifie ? " · modifié " + formaterDate(article.modifieLe) : ""}
-          </span>
-        </div>
-        <div class="article-actions">
-          <button class="btn btn-ghost btn-sm" type="button" data-action="editer-article" data-id-article="${article.id}">Modifier</button>
-          <button class="btn btn-danger btn-sm" type="button" data-action="supprimer-article" data-id-article="${article.id}">Supprimer</button>
-        </div>
-      </div>
-      <p class="article-body">${echapperHtml(article.contenu)}</p>
-      ${rendreCommentaires(article)}
-    </article>`;
-}
-
-function rendre() {
-  // Tri du plus récent au plus ancien, sans muter le tableau d'état
-  // (on trie une copie avec .slice()).
-  const articlesTries = etat.articles
-    .slice()
-    .sort((a, b) => new Date(b.creeLe) - new Date(a.creeLe));
-
-  if (articlesTries.length === 0) {
-    feedEl.innerHTML = `<p class="empty">Aucun article pour l'instant — écrivez le premier ci-dessus.</p>`;
-  } else {
-    feedEl.innerHTML = articlesTries
-      .map((article) =>
-        article.id === etat.idEnEdition
-          ? rendreArticleEnEdition(article)
-          : rendreArticleAffichage(article)
-      )
-      .join("");
-  }
-
-  const nbCommentaires = etat.articles.reduce((total, a) => total + a.commentaires.length, 0);
-  statsEl.textContent = `${etat.articles.length} article(s) · ${nbCommentaires} commentaire(s)`;
-}
-
-// ---------------------------------------------------------------
-// 6. ÉVÉNEMENTS — délégation sur les conteneurs parents
-// ---------------------------------------------------------------
-// Comme le fil d'articles est régénéré à chaque rendu, on n'attache
-// pas d'écouteur individuel sur chaque bouton (ils seraient détruits
-// à chaque rendu). On écoute plutôt les clics et les soumissions sur
-// un ancêtre stable, puis on regarde quel élément a déclenché
-// l'événement : c'est la délégation d'événements.
-
-formNouvelArticle.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const titre = document.getElementById("new-title").value;
-  const contenu = document.getElementById("new-content").value;
-
-  if (!titre.trim() || !contenu.trim()) {
-    champErreur.textContent = "Titre et contenu sont obligatoires.";
-    return;
-  }
-  champErreur.textContent = "";
-
-  creerArticle(titre, contenu);
-  formNouvelArticle.reset();
-  rendre();
-});
-
-feedEl.addEventListener("submit", (e) => {
-  const form = e.target;
-  e.preventDefault();
-
-  if (form.dataset.form === "modifier-article") {
-    const idArticle = form.dataset.idArticle;
-    const titre = document.getElementById(`edit-title-${idArticle}`).value;
-    const contenu = document.getElementById(`edit-content-${idArticle}`).value;
-    if (!titre.trim() || !contenu.trim()) return; // pas de sauvegarde vide
-    modifierArticle(idArticle, titre, contenu);
-    etat.idEnEdition = null;
-    rendre();
-    return;
-  }
-
-  if (form.dataset.form === "nouveau-commentaire") {
-    const idArticle = form.dataset.idArticle;
-    const champ = form.querySelector("input");
-    if (!champ.value.trim()) return;
-    ajouterCommentaire(idArticle, champ.value);
-    rendre();
-    return;
-  }
-});
-
-feedEl.addEventListener("click", (e) => {
-  const bouton = e.target.closest("[data-action]");
-  if (!bouton) return;
-  const action = bouton.dataset.action;
-
-  if (action === "editer-article") {
-    etat.idEnEdition = bouton.dataset.idArticle;
-    rendre();
-  } else if (action === "annuler-edition") {
-    etat.idEnEdition = null;
-    rendre();
-  } else if (action === "supprimer-article") {
-    const article = trouverArticle(bouton.dataset.idArticle);
-    const nom = article ? `« ${article.titre} »` : "cet article";
-    if (window.confirm(`Supprimer ${nom} ainsi que ses commentaires ?`)) {
-      supprimerArticle(bouton.dataset.idArticle);
-      rendre();
-    }
-  } else if (action === "supprimer-commentaire") {
-    supprimerCommentaire(bouton.dataset.idArticle, bouton.dataset.idCommentaire);
-    rendre();
-  }
-});
-
-// ---------------------------------------------------------------
-// 7. DÉMARRAGE
-// ---------------------------------------------------------------
-// Au premier lancement (rien en localStorage), on propose deux
-// articles d'exemple pour que l'app ne s'ouvre pas sur une page
-// vide — clairement identifiables comme des exemples, pas des
-// données de l'utilisateur.
-
-function creerJeuDExemple() {
-  const ilYA = (jours) => new Date(Date.now() - jours * 86400000).toISOString();
-  return [
-    {
-      id: genererId(),
-      titre: "Bienvenue dans votre cahier de bord",
-      contenu:
-        "Ceci est un article d'exemple. Modifiez-le, supprimez-le, ou laissez-le ici le temps de vous familiariser avec l'app. Chaque article peut recevoir des commentaires juste en dessous.",
-      creeLe: ilYA(2),
-      modifieLe: ilYA(2),
-      commentaires: [
-        { id: genererId(), texte: "Exemple de commentaire — supprimez-le avec la croix.", creeLe: ilYA(1) },
-      ],
-    },
-    {
-      id: genererId(),
-      titre: "Tout est sauvegardé localement",
-      contenu:
-        "Articles et commentaires sont stockés dans le localStorage de votre navigateur : ils survivent à un rafraîchissement de page, mais restent propres à cet appareil et à ce navigateur.",
-      creeLe: ilYA(5),
-      modifieLe: ilYA(5),
-      commentaires: [],
-    },
-  ];
-}
-
-function demarrer() {
-  const donneesSauvegardees = chargerArticles();
-  etat.articles = donneesSauvegardees !== null ? donneesSauvegardees : creerJeuDExemple();
-  if (donneesSauvegardees === null) {
-    sauvegarderArticles(); // on persiste le jeu d'exemple dès le premier chargement
-  }
-  rendre();
-}
-
-demarrer();
